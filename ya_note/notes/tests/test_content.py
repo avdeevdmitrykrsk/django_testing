@@ -15,11 +15,18 @@ class TestListPage(TestCase):
     def setUpTestData(cls):
         """Создаем фикстуры для тестов."""
         cls.author1 = User.objects.create(username='test_user')
+        cls.author2 = User.objects.create(username='test_user2')
         cls.note = Note.objects.create(
             title='Заметка',
             text='Просто текст.',
             slug='test_slug',
             author=cls.author1
+        )
+        cls.note2 = Note.objects.create(
+            title='Заметка2',
+            text='Просто текст2.',
+            slug='test_slug2',
+            author=cls.author2
         )
 
     def test_note_on_listpage(self):
@@ -53,8 +60,8 @@ class TestListPage(TestCase):
             ('notes:edit', (self.note.slug,))
         )
         for item in urls:
+            path, args = item
             with self.subTest():
-                path, args = item
                 url = reverse(path, args=args)
                 response = self.client.get(url)
                 self.assertIn('form', response.context)
