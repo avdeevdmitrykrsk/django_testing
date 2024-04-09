@@ -12,7 +12,6 @@ class TestNoteCreation(TestCase):
     NOTE_TEXT = 'Тестовый текст'
     NOTE_SLUG = 'tesl_slug'
 
-
     @classmethod
     def setUpTestData(cls):
         """Создаем фикстуры для тестов."""
