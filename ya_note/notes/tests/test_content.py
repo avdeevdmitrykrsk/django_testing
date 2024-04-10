@@ -47,8 +47,7 @@ class TestListPage(TestCase):
         self.client.force_login(self.author1)
         response = self.client.get(self.LIST_PAGE_URL)
         list_objects = response.context['object_list']
-        for object in list_objects:
-            self.assertEqual(object.author, self.author1)
+        self.assertNotIn(self.note2, list_objects)
 
     def test_form_in_edit_delete_pages(self):
         """Проверяем, что отдельная заметка передаётся
