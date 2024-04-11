@@ -1,54 +1,99 @@
 from http import HTTPStatus
-import pytest
 
-from django.urls import reverse
+import pytest
 from pytest_django.asserts import assertRedirects
 from pytest_lazyfixture import lazy_fixture
 
-
-@pytest.mark.django_db
-@pytest.mark.parametrize(
-    ('path', 'news'),
-    (
-        ('news:home', None),
-        ('users:login', None),
-        ('users:logout', None),
-        ('users:signup', None),
-        ('news:detail', lazy_fixture('news_id')),
-    )
-)
-def test_pages_availability_for_anonymous_user(client, path, news):
-    """Проверка доступности страниц для анонимного пользователя."""
-    url = reverse(path, args=((news.id,) if news else None))
-    response = client.get(url)
-    assert response.status_code == HTTPStatus.OK
+pytestmark = pytest.mark.django_db
 
 
 @pytest.mark.parametrize(
-    ('clients', 'status'),
+    ('reverse_url', 'parametrized_client', 'status'),
     (
-        (lazy_fixture('author_client'), HTTPStatus.OK),
-        (lazy_fixture('not_author_client'), HTTPStatus.NOT_FOUND),
-        (lazy_fixture('client'), None),
+        (
+            lazy_fixture('edit_url_author'),
+            lazy_fixture('author_client'),
+            HTTPStatus.OK
+        ),
+        (
+            lazy_fixture('delete_url_author'),
+            lazy_fixture('author_client'),
+            HTTPStatus.OK
+        ),
+        (
+            lazy_fixture('detail_url_author'),
+            lazy_fixture('author_client'),
+            HTTPStatus.OK
+        ),
+        (
+            lazy_fixture('edit_url_not_author'),
+            lazy_fixture('author_client'),
+            HTTPStatus.NOT_FOUND
+        ),
+        (
+            lazy_fixture('delete_url_not_author'),
+            lazy_fixture('author_client'),
+            HTTPStatus.NOT_FOUND
+        ),
+        (
+            lazy_fixture('edit_url_author'),
+            lazy_fixture('client'),
+            HTTPStatus.FOUND
+        ),
+        (
+            lazy_fixture('delete_url_author'),
+            lazy_fixture('client'),
+            HTTPStatus.FOUND
+        ),
+        (
+            lazy_fixture('detail_url_author'),
+            lazy_fixture('client'),
+            HTTPStatus.OK
+        ),
+        (
+            lazy_fixture('home_url_reverse'),
+            lazy_fixture('client'),
+            HTTPStatus.OK
+        ),
+        (
+            lazy_fixture('login_url_reverse'),
+            lazy_fixture('client'),
+            HTTPStatus.OK
+        ),
+        (
+            lazy_fixture('logout_url_reverse'),
+            lazy_fixture('client'),
+            HTTPStatus.OK
+        ),
+        (
+            lazy_fixture('signup_url_reverse'),
+            lazy_fixture('client'),
+            HTTPStatus.OK
+        )
     )
 )
+def test_pages_for_author_and_client(
+    reverse_url, parametrized_client, status, comment_author
+):
+    """Проверка страниц на доступность."""
+    response = parametrized_client.get(reverse_url)
+    assert response.status_code == status
+
+
 @pytest.mark.parametrize(
-    ('path', 'comment'),
+    ('reverse_url'),
     (
-        ('news:edit', lazy_fixture('comment_id')),
-        ('news:delete', lazy_fixture('comment_id'))
+        (lazy_fixture('edit_url_author')),
+        (lazy_fixture('delete_url_author'))
     )
 )
-def test_pages_availability_for_auth_user(clients, status, path, comment):
-    """
-    Проверка доступности/недоступности страниц редактирования и удаления
-    комментария для пользователей.
-    """
-    url = reverse(path, args=(comment.id,))
-    response = clients.get(url)
-    if status:
-        assert response.status_code == status
-    else:
-        login_url = reverse('users:login')
-        expected_url = f'{login_url}?next={url}'
-        assertRedirects(response, expected_url)
+def test_redirect_pages(
+    reverse_url,
+    login_url_reverse,
+    comment_author,
+    client
+):
+    """Проверка страниц на редиректы."""
+    expected_url = f'{login_url_reverse}?next={reverse_url}'
+    response = client.get(reverse_url)
+    assertRedirects(response, expected_url)
