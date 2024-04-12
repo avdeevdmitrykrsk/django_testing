@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 
 import pytest
+from django.conf import settings
 from django.urls import reverse
 from django.test.client import Client
 from django.utils import timezone
 
 from news.models import Comment, News
-from django.conf import settings
 
 
 @pytest.fixture
@@ -138,12 +138,3 @@ def logout_url_reverse():
 @pytest.fixture
 def signup_url_reverse():
     return reverse('users:signup')
-
-
-@pytest.fixture
-def edited_comment_author(author, news):
-    return {
-        'text': 'измененный текст',
-        'author': author,
-        'news': news
-    }

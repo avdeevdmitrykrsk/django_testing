@@ -1,38 +1,10 @@
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
 from django.urls import reverse
 
+from .fixtures import AddFixture
 from notes.forms import NoteForm
-from notes.models import Note
 
 User = get_user_model()
-
-
-class AddFixture(TestCase):
-
-    LIST_PAGE_URL = reverse('notes:list')
-
-    @classmethod
-    def setUpTestData(cls):
-        """Создаем фикстуры для тестов."""
-        cls.author = User.objects.create(username='test_user')
-        cls.author_another_note = User.objects.create(
-            username='test_user2'
-        )
-        cls.note_author = Note.objects.create(
-            title='Заметка',
-            text='Просто текст.',
-            slug='test_slug',
-            author=cls.author
-        )
-        cls.note_author_another_note = Note.objects.create(
-            title='Заметка2',
-            text='Просто текст2.',
-            slug='test_slug2',
-            author=cls.author_another_note
-        )
-        cls.auth_author = Client()
-        cls.auth_author.force_login(cls.author)
 
 
 class TestListPage(AddFixture):
@@ -51,9 +23,9 @@ class TestListPage(AddFixture):
                 Используемые методы:
                     1. assertIn()
         """
-        response = self.auth_author.get(self.LIST_PAGE_URL)
-        note_list = response.context['object_list']
-        self.assertIn(self.note_author, note_list)
+        response = self.auth_author.get(self.list_page_url)
+        notes = response.context['object_list']
+        self.assertIn(self.note_author, notes)
 
     def test_list_only_for_author(self):
         """
@@ -70,9 +42,9 @@ class TestListPage(AddFixture):
                 Используемые методы:
                     1. assertNotIn()
         """
-        response = self.auth_author.get(self.LIST_PAGE_URL)
-        note_list = response.context['object_list']
-        self.assertNotIn(self.note_author_another_note, note_list)
+        response = self.auth_author.get(self.list_page_url)
+        notes = response.context['object_list']
+        self.assertNotIn(self.note_not_author, notes)
 
     def test_form_in_add_delete_pages(self):
         """

@@ -1,30 +1,11 @@
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
 from django.urls import reverse
 
-from notes.models import Note
+from .fixtures import AddFixture
 
 User = get_user_model()
-
-
-class AddFixture(TestCase):
-
-    @classmethod
-    def setUpTestData(cls):
-        """Создаем фикстуры для тестов."""
-        cls.author = User.objects.create(username='тестовый Автор')
-        cls.reader = User.objects.create(username='Тестовый Аноним')
-        cls.note = Note.objects.create(
-            title='Тестовый заголовок',
-            text='Тестовый текст',
-            slug='test_slug',
-            author=cls.author
-        )
-        cls.auth_author = Client()
-        cls.auth_author.force_login(cls.author)
-        cls.login_url = reverse('users:login')
 
 
 class TestRoutes(AddFixture):
@@ -61,9 +42,9 @@ class TestRoutes(AddFixture):
     def test_edit_delete_detail_pages(self):
         """Проверяем, доступ страниц аутентифицированному пользователю."""
         urls = (
-            ('notes:detail', (self.note.slug,)),
-            ('notes:edit', (self.note.slug,)),
-            ('notes:delete', (self.note.slug,))
+            ('notes:detail', (self.note_author.slug,)),
+            ('notes:edit', (self.note_author.slug,)),
+            ('notes:delete', (self.note_author.slug,))
         )
         user_statuses = (
             (self.auth_author, HTTPStatus.OK),
@@ -88,9 +69,9 @@ class TestRoutes(AddFixture):
             ('notes:list', None),
             ('notes:success', None),
             ('notes:add', None),
-            ('notes:detail', (self.note.slug,)),
-            ('notes:edit', (self.note.slug,)),
-            ('notes:delete', (self.note.slug,))
+            ('notes:detail', (self.note_author.slug,)),
+            ('notes:edit', (self.note_author.slug,)),
+            ('notes:delete', (self.note_author.slug,))
         )
         for item in urls:
             path, args = item

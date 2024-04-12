@@ -1,8 +1,8 @@
-from http import HTTPStatus
+from http import HTTPStatus as Sc
 
 import pytest
 from pytest_django.asserts import assertRedirects
-from pytest_lazyfixture import lazy_fixture
+from pytest_lazyfixture import lazy_fixture as lf
 
 pytestmark = pytest.mark.django_db
 
@@ -10,67 +10,23 @@ pytestmark = pytest.mark.django_db
 @pytest.mark.parametrize(
     ('reverse_url', 'parametrized_client', 'status'),
     (
+        (lf('edit_url_author'), lf('author_client'), Sc.OK),
+        (lf('delete_url_author'), lf('author_client'), Sc.OK),
+        (lf('detail_url_author'), lf('author_client'), Sc.OK),
+        (lf('edit_url_not_author'), lf('author_client'), Sc.NOT_FOUND),
         (
-            lazy_fixture('edit_url_author'),
-            lazy_fixture('author_client'),
-            HTTPStatus.OK
+            lf('delete_url_not_author'),
+            lf('author_client'),
+            Sc.NOT_FOUND,
         ),
-        (
-            lazy_fixture('delete_url_author'),
-            lazy_fixture('author_client'),
-            HTTPStatus.OK
-        ),
-        (
-            lazy_fixture('detail_url_author'),
-            lazy_fixture('author_client'),
-            HTTPStatus.OK
-        ),
-        (
-            lazy_fixture('edit_url_not_author'),
-            lazy_fixture('author_client'),
-            HTTPStatus.NOT_FOUND
-        ),
-        (
-            lazy_fixture('delete_url_not_author'),
-            lazy_fixture('author_client'),
-            HTTPStatus.NOT_FOUND
-        ),
-        (
-            lazy_fixture('edit_url_author'),
-            lazy_fixture('client'),
-            HTTPStatus.FOUND
-        ),
-        (
-            lazy_fixture('delete_url_author'),
-            lazy_fixture('client'),
-            HTTPStatus.FOUND
-        ),
-        (
-            lazy_fixture('detail_url_author'),
-            lazy_fixture('client'),
-            HTTPStatus.OK
-        ),
-        (
-            lazy_fixture('home_url_reverse'),
-            lazy_fixture('client'),
-            HTTPStatus.OK
-        ),
-        (
-            lazy_fixture('login_url_reverse'),
-            lazy_fixture('client'),
-            HTTPStatus.OK
-        ),
-        (
-            lazy_fixture('logout_url_reverse'),
-            lazy_fixture('client'),
-            HTTPStatus.OK
-        ),
-        (
-            lazy_fixture('signup_url_reverse'),
-            lazy_fixture('client'),
-            HTTPStatus.OK
-        )
-    )
+        (lf('edit_url_author'), lf('client'), Sc.FOUND),
+        (lf('delete_url_author'), lf('client'), Sc.FOUND),
+        (lf('detail_url_author'), lf('client'), Sc.OK),
+        (lf('home_url_reverse'), lf('client'), Sc.OK),
+        (lf('login_url_reverse'), lf('client'), Sc.OK),
+        (lf('logout_url_reverse'), lf('client'), Sc.OK),
+        (lf('signup_url_reverse'), lf('client'), Sc.OK),
+    ),
 )
 def test_pages_for_author_and_client(
     reverse_url, parametrized_client, status, comment_author
@@ -81,17 +37,10 @@ def test_pages_for_author_and_client(
 
 
 @pytest.mark.parametrize(
-    ('reverse_url'),
-    (
-        (lazy_fixture('edit_url_author')),
-        (lazy_fixture('delete_url_author'))
-    )
+    ('reverse_url'), ((lf('edit_url_author')), (lf('delete_url_author')))
 )
 def test_redirect_pages(
-    reverse_url,
-    login_url_reverse,
-    comment_author,
-    client
+    reverse_url, login_url_reverse, comment_author, client
 ):
     """Проверка страниц на редиректы."""
     expected_url = f'{login_url_reverse}?next={reverse_url}'
