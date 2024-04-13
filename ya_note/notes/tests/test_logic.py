@@ -162,11 +162,11 @@ class TestNoteCreation(AddFixture):
             self.edited_form_data_not_author
         )
         note = Note.objects.get(pk=self.note_not_author.id)
-        self.assertEqual(note.title, self.edited_form_data_not_author['title'])
+        self.assertEqual(note.title, self.note_not_author.title)
         self.assertEqual(
             note.text, self.note_not_author.text
         )
-        self.assertEqual(note.slug, self.edited_form_data_not_author['slug'])
+        self.assertEqual(note.slug, self.note_not_author.slug)
         self.assertEqual(note.author, self.not_author)
 
     def test_delete_note_author(self):
