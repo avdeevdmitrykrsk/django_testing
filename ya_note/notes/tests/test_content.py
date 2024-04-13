@@ -1,8 +1,7 @@
 from django.contrib.auth import get_user_model
-from django.urls import reverse
 
-from .fixtures import AddFixture
 from notes.forms import NoteForm
+from notes.tests.fixtures import AddFixture
 
 User = get_user_model()
 
@@ -46,7 +45,7 @@ class TestListPage(AddFixture):
         notes = response.context['object_list']
         self.assertNotIn(self.note_not_author, notes)
 
-    def test_form_in_add_delete_pages(self):
+    def test_form_in_add_edit_pages(self):
         """
         Проверка наличия формы.
 
@@ -63,13 +62,11 @@ class TestListPage(AddFixture):
                     2. assertIsInstance()
         """
         urls = (
-            ('notes:add', None),
-            ('notes:edit', (self.note_author.slug,))
+            (self.url_add),
+            (self.url_edit_note_author)
         )
-        for item in urls:
-            path, args = item
-            with self.subTest(path=path, args=args):
-                url = reverse(path, args=args)
+        for url in urls:
+            with self.subTest(url=url):
                 response = self.auth_author.get(url)
                 self.assertIn('form', response.context)
                 self.assertIsInstance(

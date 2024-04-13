@@ -2,8 +2,8 @@ from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
 
-from .fixtures import AddFixture
 from notes.models import Note
+from notes.tests.fixtures import AddFixture
 
 User = get_user_model()
 
@@ -121,47 +121,59 @@ class TestNoteCreation(AddFixture):
         note = Note.objects.last()
         self.assertEqual(note.slug, self.slug_for_note)
 
-    def test_edit_pages(self):
+    def test_edit_note_author(self):
         """
         Проверка страницы редактирования заметки.
 
-            Проверяем, что пользователь может редактировать свои заметки,
-            при этом не может редактировать чужие.
+            Проверяем, что пользователь может редактировать свои заметки.
 
                 Порядок действий:
                     1. Делаем post запрос к своей заметке с новыми данными.
-                    2. Проверяем изменение данных.
-                    3. Делаем post запрос к чужой заметке с новыми данными.
-                    4. Проверяем что вернулась 404 ошибка.
+                    2. Проверяем поля.
 
                 Используемые методы:
                     1. assertEqual()
         """
-        with self.subTest():
-            self.auth_author.post(
-                self.url_edit_note_author,
-                data=self.edited_form_data_author
-            )
-            note = Note.objects.get(pk=self.note_author.id)
-            self.assertEqual(note.author, self.note_author.author)
-            self.assertEqual(note.text, self.edited_form_data_author['text'])
-            response = self.auth_author.post(
-                self.url_edit_note_not_author,
-                data=self.edited_form_data_not_author
-            )
-            note = Note.objects.get(pk=self.note_not_author.id)
-            self.assertEqual(note.author, self.note_not_author.author)
-            self.assertNotEqual(
-                note.text, self.edited_form_data_not_author['text']
-            )
-            self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        self.auth_author.post(
+            self.url_edit_note_author,
+            data=self.edited_form_data_author
+        )
+        note = Note.objects.get(pk=self.note_author.id)
+        self.assertEqual(note.title, self.edited_form_data_author['title'])
+        self.assertEqual(note.text, self.edited_form_data_author['text'])
+        self.assertEqual(note.slug, self.edited_form_data_author['slug'])
+        self.assertEqual(note.author, self.author_client)
 
-    def test_delete_pages(self):
+    def test_edit_note_not_author(self):
+        """
+        Проверка страницы редактирования заметки.
+
+            Проверяем, что пользователь не может редактировать чужие заметки.
+
+                Порядок действий:
+                    1. Делаем post запрос к чужой заметке с новыми данными.
+                    2. Проверяем поля.
+
+                Используемые методы:
+                    1. assertEqual()
+        """
+        self.auth_author.post(
+            self.url_edit_note_not_author,
+            self.edited_form_data_not_author
+        )
+        note = Note.objects.get(pk=self.note_not_author.id)
+        self.assertEqual(note.title, self.edited_form_data_not_author['title'])
+        self.assertEqual(
+            note.text, self.note_not_author.text
+        )
+        self.assertEqual(note.slug, self.edited_form_data_not_author['slug'])
+        self.assertEqual(note.author, self.not_author)
+
+    def test_delete_note_author(self):
         """
         Проверка страницы удаления заметки.
 
             Проверяем, что пользователь может удалять свои заметки,
-            при этом не может удалять чужие.
 
             Порядок действий:
                     1. Считаем количество заметок.
@@ -171,33 +183,44 @@ class TestNoteCreation(AddFixture):
                         должно быть на 1 меньше.
                     5. Так же дополнительно проверяем что сработал редирект
                         после удаления.
-                    6. Сравнимаев количество заметок после попытки удаления.
-                    7. Проверяем, что при попытке получить доступ к странице
-                        удаления чужой записи, получаем ошибку 404.
 
                 Используемые методы:
                     1. assertRedirect()
                     2. assertEqual()
         """
-        with self.subTest():
-            notes_count_before_post_request = Note.objects.count()
-            response_from_author_note = self.auth_author.delete(
-                self.url_delete_note_author
-            )
-            notes_count_after_post_request = Note.objects.count()
-            self.assertEqual(
-                notes_count_after_post_request,
-                notes_count_before_post_request - 1
-            )
-            self.assertRedirects(response_from_author_note, self.success_url)
-            notes_count_before_post_request = Note.objects.count()
-            response_from_not_author_note = self.auth_author.delete(
-                self.url_delete_note_not_author
-            )
-            notes_count_after_post_request = Note.objects.count()
-            self.assertEqual(
-                notes_count_after_post_request, notes_count_before_post_request
-            )
-            self.assertEqual(
-                response_from_not_author_note.status_code, HTTPStatus.NOT_FOUND
-            )
+        notes_count_before_post_request = Note.objects.count()
+        response_from_author_note = self.auth_author.delete(
+            self.url_delete_note_author
+        )
+        notes_count_after_post_request = Note.objects.count()
+        self.assertEqual(
+            notes_count_after_post_request,
+            notes_count_before_post_request - self.notes_difference_count
+        )
+        self.assertRedirects(response_from_author_note, self.success_url)
+
+    def test_delete_note_not_author(self):
+        """
+        Проверка страницы удаления заметки.
+
+            Проверяем, что пользователь не может удалять чужие заметки,
+
+            Порядок действий:
+                    1. Считаем количество заметок.
+                    2. Делаем delete запрос к чужой заметке.
+
+                Используемые методы:
+                    1. assertRedirect()
+                    2. assertEqual()
+        """
+        notes_count_before_post_request = Note.objects.count()
+        response = self.auth_author.delete(
+            self.url_delete_note_not_author
+        )
+        notes_count_after_post_request = Note.objects.count()
+        self.assertEqual(
+            notes_count_after_post_request, notes_count_before_post_request
+        )
+        self.assertEqual(
+            response.status_code, HTTPStatus.NOT_FOUND
+        )

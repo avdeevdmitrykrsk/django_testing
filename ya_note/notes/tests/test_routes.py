@@ -1,9 +1,8 @@
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
-from django.urls import reverse
 
-from .fixtures import AddFixture
+from notes.tests.fixtures import AddFixture
 
 User = get_user_model()
 
@@ -15,36 +14,34 @@ class TestRoutes(AddFixture):
         доступны анонимному пользователю.
         """
         urls = (
-            'notes:home',
-            'users:login',
-            'users:logout',
-            'users:signup'
+            self.url_home,
+            self.login_url,
+            self.logout_url,
+            self.signup_url
         )
-        for name in urls:
-            with self.subTest(name=name):
-                url = reverse(name)
+        for url in urls:
+            with self.subTest(url=url):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_pages_availability_for_auth_user(self):
         """Проверяем доступность страниц аутентифицированному пользователю."""
         urls = (
-            'notes:list',
-            'notes:add',
-            'notes:success'
+            self.list_page_url,
+            self.url_add,
+            self.success_url
         )
-        for path in urls:
-            with self.subTest():
-                url = reverse(path)
+        for url in urls:
+            with self.subTest(url=url):
                 response = self.auth_author.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_edit_delete_detail_pages(self):
         """Проверяем, доступ страниц аутентифицированному пользователю."""
         urls = (
-            ('notes:detail', (self.note_author.slug,)),
-            ('notes:edit', (self.note_author.slug,)),
-            ('notes:delete', (self.note_author.slug,))
+            self.url_detail_note_author,
+            self.url_edit_note_author,
+            self.url_delete_note_author
         )
         user_statuses = (
             (self.auth_author, HTTPStatus.OK),
@@ -52,11 +49,10 @@ class TestRoutes(AddFixture):
         )
         for item in user_statuses:
             user, status = item
-            for path, args in urls:
+            for url in urls:
                 with self.subTest(
-                    path=path, args=args, user=user, status=status
+                    url=url, user=user, status=status
                 ):
-                    url = reverse(path, args=args)
                     response = user.get(url)
                     self.assertEqual(response.status_code, status)
 
@@ -66,16 +62,14 @@ class TestRoutes(AddFixture):
         неаутентифицированного пользователя.
         """
         urls = (
-            ('notes:list', None),
-            ('notes:success', None),
-            ('notes:add', None),
-            ('notes:detail', (self.note_author.slug,)),
-            ('notes:edit', (self.note_author.slug,)),
-            ('notes:delete', (self.note_author.slug,))
+            self.list_page_url,
+            self.url_add,
+            self.success_url,
+            self.url_detail_note_author,
+            self.url_edit_note_author,
+            self.url_delete_note_author
         )
-        for item in urls:
-            path, args = item
-            url = reverse(path, args=args)
+        for url in urls:
             redirect_url = f'{self.login_url}?next={url}'
             response = self.client.get(url)
             self.assertRedirects(response, redirect_url)
